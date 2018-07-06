@@ -1,0 +1,11 @@
+@import url(reset.css);
+@import url('https://fonts.googleapis.com/css?family=Slabo+27px');
+@import url(http://fonts.googleapis.com/earlyaccess/nanumgothic.css);
+
+.item-on-hover1{width: 45%;height: 50%;display: block;position: absolute;z-index: 200;background: rgba(0,0,0,0);transition: background 0.5s;cursor: pointer;opacity: 100%}
+
+.item-box{display: block ; margin:0 auto;}
+
+.item-box>h2{text-align: left;font-size: 100px;margin-top: auto;color:#fff;margin:0 auto; padding-top: 450px;font-family: 'Nanum Gothic',serif;z-index: 1000;transition: all 0.5s;}
+
+.item-on-hover:hover{background: rgba(0,0,0,0.4);}
