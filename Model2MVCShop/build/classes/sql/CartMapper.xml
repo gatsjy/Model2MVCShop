@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CartMapper">
+ 	
+	<resultMap id="cartSelectMap" type="cart">
+		<result property="cartNo" 							     column="cart_no" 					         jdbcType="INTEGER"/>
+		<result property="cartProd.prodNo"                column="prod_no"   							jdbcType="INTEGER"/>
+		<result property="cartQuantity" 			             column="cart_prodQuantity" 				jdbcType="INTEGER" />
+		<result property="cartPrice"	                             column="cart_price"                            jdbcType="INTEGER"/>
+		<result property="prodPrice"	                             column="prod_price"                            jdbcType="INTEGER"/> 
+		<result property="sumPrice"	                             column="sumPrice"                            jdbcType="INTEGER"/>
+		<result property="buyer.userId"					     column="buyer_id"   							jdbcType="VARCHAR"/>
+		<result property="cartProd.prodName"           column="prod_name"   				jdbcType="VARCHAR"/>
+		<result property="cartCancel"                          column="cartCancel"   				jdbcType="VARCHAR"/>
+		<result property="regDate" 						          column="reg_date" 				jdbcType="DATE" />
+	</resultMap>
+	
+	<!-- 1. 장바구니 추가 -->
+	<insert 	id="addCart"	parameterType="cart" >
+	 	INSERT
+		INTO cart  (
+					cart_no, 
+					prod_no, 
+					buyer_id, 
+					cart_price,
+					cart_prodQuantity, 
+					prod_name,
+					prod_price,
+					reg_Date)
+		VALUES ( 	
+					seq_cart_cart_no.NEXTVAL, 
+					#{cartProd.prodNo:INTEGER},
+					#{buyer.userId:VARCHAR},
+					#{cartPrice:INTEGER},
+					#{cartQuantity:INTEGER},
+					#{cartProd.prodName:VARCHAR},
+					#{prodPrice:INTEGER},
+					SYSDATE)
+	 </insert>
+	 
+	 <!-- 2. 장바구니 삭제-->
+	 <delete id="deleteCart">
+	 	DELETE FROM cart
+	 	WHERE cart_no = #{cartNo}
+	 </delete>
+	 
+	 <!-- 3. 장바구니 수정 -->
+	 <update id="modifyCart">
+        UPDATE cart    
+        <set> 
+        cart_prodQuantity = #{cartQuantity:INTEGER},
+        cart_price = #{cartPrice}
+        </set>
+        WHERE buyer_id= #{buyer.userId} 
+        AND prod_no = #{cartProd.prodNo}
+        AND cartCancel = '0'
+    </update>
+    
+    <!-- 4. 장바구니에 동일한 상품 레코드확인 -->
+    <select id="countCart" resultType="int">
+    	SELECT COUNT(*)
+    	FROM cart
+    	WHERE buyer_id= #{buyer.userId}
+    	AND prod_no = #{cartProd.prodNo}
+    	AND cartCancel = '0'
+    </select>
+    
+    <!-- 5. 장바구니에 동일한 상품이 존재하면 수정 -->
+    <update id="updateCart" parameterType="cart" >
+    	UPDATE cart
+    	<set> 
+    	cart_prodQuantity = cart_prodQuantity + #{cartQuantity},
+    	cart_price = cart_price+ #{cartPrice}
+    	</set>
+    	WHERE buyer_id= #{buyer.userId}
+    	AND prod_no = #{cartProd.prodNo}
+    	AND cartCancel = '0'
+    </update>
+    
+    <!-- 6. 장바구니 전체 금액 -->
+    <select id="sumPrice" resultType="int">
+    	SELECT NVL(SUM(cart_price) , 0) sumPrice
+    	FROM cart
+    	WHERE buyer_id= #{buyer.userId}
+    </select>
+    
+    <!-- 7.장바구니 리스트를 뽑아냈다. -->
+    <select id="getCartlist" resultMap="cartSelectMap">
+	    SELECT 
+		cart_no, prod_no, buyer_id, cart_price, cart_prodQuantity, prod_price, prod_name
+		FROM cart
+		WHERE buyer_id=#{buyer.userId}
+		AND cartCancel = '0'
+		ORDER BY cart_no
+    </select>
+    
+    <!-- 8. 각각 장바구니의 정보를 가져옵니다. -->
+     <select id="getCart" parameterType="Int" resultMap="cartSelectMap">
+	    SELECT 
+		cart_no, prod_no, buyer_id, cart_price, cart_prodquantity, prod_name, prod_price
+		FROM cart
+		WHERE cart_no=#{cartNo}
+    </select>
+    
+    <!-- 9. 장바구니의 구매가 완료되면 목록에서 없앤다. -->
+       <update id="updatecartCancel" parameterType="cart" >
+    	UPDATE cart
+    	<set> 
+    	cartCancel = '1'
+    	</set>
+    	WHERE cart_no=#{cartNo}
+    </update>
+    
+</mapper>

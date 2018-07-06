@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="NoticeMapper">
+ 	
+	<resultMap id="noticeSelectMap" type="notice">
+		<result property="noticeNo" 		column="notice_no" 			jdbcType="INTEGER"/>
+		<result property="noticeId"			column="notice_id" 			jdbcType="VARCHAR" />
+		<result property="noticeTitle" 		column="notice_title" 			jdbcType="VARCHAR" />
+		<result property="noticeDetail" 	column="notice_detail" 		jdbcType="VARCHAR" />
+		<result property="fileName" 	column="fileName" 		jdbcType="VARCHAR" />
+		<result property="regDate" 			column="reg_date" 			jdbcType="DATE" />
+		<result property="noticeHits" 		column="notice_hits"			jdbcType="INTEGER" />
+	</resultMap>
+	
+	<!-- SQL : INSERT -->
+	<insert 	id="addNotice" parameterType="notice" >
+	 	INSERT
+		INTO notice (notice_no,notice_id,notice_title,notice_detail,reg_date,fileName)
+		VALUES	
+		(seq_notice_notice_no.nextval, 
+		#{noticeId}, 
+		#{noticeTitle}, 
+		#{noticeDetail}, 
+ 		SYSDATE,
+ 		#{fileName} )
+	 </insert>
+	 
+	 <!-- SQL : SELECT ONE -->
+	 <select 	id="getNotice"	parameterType="Int" resultMap="noticeSelectMap">
+		SELECT notice_no, notice_title, notice_id, notice_detail, notice_hits
+		FROM notice
+		WHERE notice_no = #{noticeNo}
+	 </select>
+	 
+	  <!-- SQL : UPDATE -->
+	<update	id="updateNoticeHits"	parameterType="notice" >
+	   	UPDATE Notice
+	   	<set>
+	   		notice_hits 	= #{noticeHits}
+	   	</set>
+	  	 	WHERE notice_no = #{noticeNo}
+	 </update>
+	 
+	 <!-- SQL : UPDATE -->
+	<update	id="updateNotice"	parameterType="notice" >
+	   	UPDATE notice
+	   	<set>
+	   		notice_title 	= #{noticeTitle} ,
+			notice_detail	= #{noticeDetail}
+	   	</set>
+	   	WHERE notice_no = #{noticeNo}
+	 </update>
+		 
+	<!-- SQL : SELECT LIST -->
+	<select  id="getNoticeList"  parameterType="search" resultMap="noticeSelectMap">
+	  SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+	  					FROM		(	SELECT n.notice_no, n.notice_title, n.notice_id, n.notice_detail, n.reg_date, n.notice_hits
+											FROM notice n
+											INNER JOIN users u
+											ON n.notice_id = u.user_id(+)
+											<if test="searchCondition != null">
+												<where>
+													<if test="searchCondition == 0 and searchKeyword !='' ">
+										 				 n.notice_title LIKE '%'||#{searchKeyword}||'%'
+													</if>
+													<if test="searchCondition == 1 and searchKeyword !='' ">
+										 				n.notice_id LIKE '%'||#{searchKeyword}||'%'
+													</if>
+												</where>
+											</if>
+											) inner_table
+											WHERE ROWNUM <![CDATA[<=]]> #{search.currentPage}*#{search.pageSize} )
+  		WHERE row_seq BETWEEN (#{search.currentPage}-1)*#{search.pageSize}+1
+  		AND #{search.currentPage}*#{search.pageSize}
+	</select>
+	
+	<!-- SQL : SELECT ROW Count -->	 
+	<select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	  	SELECT COUNT(*)
+	  	FROM(	SELECT n.notice_no, n.notice_title, n.notice_id, n.notice_detail, n.reg_date 
+						FROM notice n
+						INNER JOIN users u
+						ON n.notice_id = u.user_id(+)
+											<if test="searchCondition != null">
+												<where>
+													<if test="searchCondition == 0 and searchKeyword !='' ">
+										 				n.notice_title LIKE '%'||#{searchKeyword}||'%'
+													</if>
+													<if test="searchCondition == 1 and searchKeyword !='' ">
+										 				n.notice_id LIKE '%'||#{searchKeyword}||'%'
+													</if>
+												</where>
+											</if> ) countTable						
+	 </select>
+	 
+</mapper>

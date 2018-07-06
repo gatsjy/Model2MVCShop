@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PurchaseMapper">
+ 	
+	<resultMap id="purchaseSelectMap" type="purchase">
+		<result property="tranNo" 							column="tran_no" 					jdbcType="INTEGER"/>
+		<result property="paymentOption" 				column="payment_option" 						jdbcType="VARCHAR" />
+		<result property="receiverName" 				column="receiver_name" 				jdbcType="VARCHAR" />
+		<result property="receiverPhone" 				column="receiver_phone" 	jdbcType="VARCHAR" />
+		<result property="divyAddr" 						column="demailaddr" 		jdbcType="VARCHAR"  />
+		<result property="divyRequest" 					column="dlvy_request" 				jdbcType="VARCHAR" />
+		<result property="tranCode" 						column="tran_status_code" 				jdbcType="VARCHAR" />
+		<result property="orderDate" 						column="order_data" 				jdbcType="DATE" />
+		<result property="divyDate" 						column="dlvy_date" 				jdbcType="VARCHAR" />
+		<result property="purchaseQuantity" 			column="purchase_quantity" 				jdbcType="INTEGER" />
+		<result property="purchasePrice" 				column="purchase_price" 				jdbcType="INTEGER" />
+		<result property="purchaseCancel" 			column="purchase_cancel" 				jdbcType="VARCHAR" />
+		<result property="purchaseProd.prodNo" column="prod_no"   							jdbcType="INTEGER"/>
+		<result property="buyer.userId"					column="buyer_id"   							jdbcType="VARCHAR"/>
+		<result property="star"  								column="star"   									jdbcType="INTEGER"/>
+		<result property="review"					            column="review"   								jdbcType="VARCHAR"/>
+		<result property="purchaseProd.prodName" column="prod_name"   				jdbcType="VARCHAR"/>
+		<result property="purchaseProd.prodQuantity" column="prod_quantity"   		jdbcType="INTEGER"/>
+		<result property="lat"					                    column="lat"   								jdbcType="VARCHAR"/>
+		<result property="lng"					                column="lng"   								jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<!-- SQL : INSERT -->
+	<insert 	id="addPurchase"	parameterType="purchase" >
+	 	INSERT
+		INTO transaction  (
+					tran_no, 
+					prod_no, 
+					buyer_id, 
+					payment_option, 
+					receiver_name, 
+					receiver_phone,
+					demailaddr, 
+					dlvy_request, 
+					tran_status_code, 
+					order_data, 
+					dlvy_date,
+					purchase_quantity,
+					purchase_price,
+					purchase_cancel,
+					star,
+					review,
+					lat,
+					lng)
+		VALUES ( 	
+					seq_transaction_tran_no.NEXTVAL, 
+					#{purchaseProd.prodNo:INTEGER},
+					#{buyer.userId:VARCHAR},
+					#{paymentOption:CHAR},
+					#{receiverName:VARCHAR},
+					#{receiverPhone:VARCHAR},
+					#{divyAddr:VARCHAR},
+					#{divyRequest:VARCHAR},
+					'1',
+					SYSDATE,
+					#{divyDate:DATE},
+					#{purchaseQuantity:INTEGER},
+					#{purchasePrice:INTEGER},
+					'0',
+					#{star:INTEGER},
+					#{review:VARCHAR},
+					#{lat},
+					#{lng})		
+	 </insert>
+ 
+	 <select id="getPurchase" resultMap="purchaseSelectMap" parameterType="int"> 
+	 SELECT 
+	 t.prod_no, 
+	 t.buyer_id, 
+	 t.payment_option, 
+	 t.receiver_name, 
+	 t.receiver_phone, 
+	 t.demailaddr, 
+	 t.dlvy_request, 
+	 t.dlvy_date, 
+	 t.tran_status_code, 
+	 t.tran_no, 
+	 t.order_data, 
+	 t.purchase_quantity,
+	 t.purchase_price,
+	 t.dlvy_date,
+	 p.prod_name as prod_name
+	 FROM transaction t, product p
+	 WHERE t.prod_no=p.prod_no
+	 AND tran_no = #{tranNo} 
+	 </select>
+	 
+	 <!-- SQL : SELECT LIST -->
+	<select id="getPurchaseList" parameterType="map" resultMap="purchaseSelectMap">
+  		SELECT *
+  		FROM ( SELECT inner_table.*, ROWNUM AS row_seq
+  						FROM ( SELECT t.* , p.prod_name
+										FROM transaction t, product p
+										WHERE p.prod_no=t.prod_no
+										AND buyer_id = #{buyerId}
+										AND purchase_cancel= '0'
+										ORDER BY tran_no  ) inner_table
+  						WHERE ROWNUM <![CDATA[<=]]> #{search.currentPage}*#{search.pageSize} )
+  		WHERE row_seq BETWEEN (#{search.currentPage}-1)*#{search.pageSize}+1
+  		AND #{search.currentPage}*#{search.pageSize}
+	</select>
+	
+	<!-- SQL : SELECT ROW Count -->	 
+	 <select  id="getTotalCount1"  parameterType="String"	 resultType="int">
+	  	SELECT COUNT(*)
+	  	FROM(	SELECT t.* , p.prod_name
+										FROM transaction t, product p
+										WHERE p.prod_no=t.prod_no
+										AND buyer_id = #{buyerId}
+										AND purchase_cancel= '0'
+										ORDER BY tran_no  ) countTable						
+	 </select>
+	
+	 <!-- SQL : SELECT LIST -->
+	<select id="getCancelPurchaseList" parameterType="String" resultMap="purchaseSelectMap">
+  		SELECT *
+  		FROM ( SELECT inner_table.*, ROWNUM AS row_seq
+  						FROM ( SELECT 
+  										t.*,  p.prod_name as prod_name
+  									   FROM transaction t,  product p
+  									   WHERE p.prod_no=t.prod_no
+										AND buyer_id = #{buyerId}
+  									   AND purchase_cancel= '1' 
+  									   ORDER BY tran_no  ) inner_table
+  						WHERE ROWNUM <![CDATA[<=]]> #{search.currentPage}*#{search.pageSize} )
+  		WHERE row_seq BETWEEN (#{search.currentPage}-1)*#{search.pageSize}+1
+  		AND #{search.currentPage}*#{search.pageSize}
+	</select>
+	
+	<!-- SQL : SELECT ROW Count -->	 
+	 <select  id="getTotalCount2"  parameterType="String"	 resultType="int">
+	  	SELECT COUNT(*)
+	  	FROM(	SELECT 
+  										t.*,  p.prod_name as prod_name
+  									   FROM transaction t,  product p
+  									   WHERE p.prod_no=t.prod_no
+										AND buyer_id = #{buyerId}
+  									   AND purchase_cancel= '1' 
+  									   ORDER BY tran_no  ) countTable						
+	 </select>
+
+	<select id="getSaleList" parameterType="search" resultMap="purchaseSelectMap">
+  		SELECT *
+  		FROM ( SELECT inner_table.*, ROWNUM AS row_seq
+  						FROM ( SELECT t.*, p.prod_name as prod_name, p.prod_quantity as prod_quantity
+										FROM transaction t, product p
+										 WHERE p.prod_no=t.prod_no
+										AND  purchase_cancel= '0'
+										ORDER BY tran_no  ) inner_table
+						WHERE ROWNUM <![CDATA[<=]]> #{currentPage}*#{pageSize} )
+  		WHERE row_seq BETWEEN (#{currentPage}-1)*#{pageSize}+1
+  		AND #{currentPage}*#{pageSize}
+	</select>
+	
+	<!-- SQL : SELECT ROW Count -->	 
+	 <select  id="getTotalCount3"  parameterType="search"	 resultType="int">
+	  	SELECT COUNT(*)
+	  	FROM(	SELECT t.*, p.prod_name as prod_name
+										FROM transaction t, product p
+										 WHERE p.prod_no=t.prod_no
+										AND  purchase_cancel= '0'
+										ORDER BY tran_no  ) countTable						
+	 </select>
+	 
+	<update	id="updatePurchase"	parameterType="purchase" >
+	   	UPDATE transaction
+	   	<set>
+	   		payment_option  = #{paymentOption:VARCHAR} ,
+			receiver_name     = #{receiverName:VARCHAR},
+			receiver_phone 	 = #{receiverPhone:INTEGER},
+			demailaddr			 =	#{divyAddr:VARCHAR},
+			dlvy_request        = #{divyRequest:VARCHAR},
+			dlvy_date              = #{divyDate:DATE}
+	   	</set>
+	   	WHERE tran_no = #{tranNo}
+	 </update>
+	 
+	 <update	id="updateTranCode"	parameterType="purchase" >
+	   	UPDATE transaction
+	   	<set>
+	   		tran_status_code = '3'
+	   	</set>
+	   	WHERE tran_no = #{tranNo}
+	 </update>
+	 
+	  <update	id="updateTranCodeByTranNo"	parameterType="purchase" >
+	   	UPDATE transaction
+	   	<set>
+	   		tran_status_code = '2'
+	   	</set>
+	   	WHERE tran_no = #{tranNo}
+	 </update>
+	 
+	   <update	id="updateTranCodeByProd"	parameterType="purchase" >
+	   	UPDATE transaction
+	   	<set>
+	   		tran_status_code = '2'
+	   	</set>
+	   	WHERE prod_no = #{purchaseProd.prodNo}
+	 </update>
+	 
+	 <update id="cancelPurchase"	parameterType="purchase" >
+	   	UPDATE transaction
+	   	<set>
+	   		purchase_cancel='1'
+	   	</set>
+	   	WHERE tran_no = #{tranNo}
+	 </update>
+	 
+ 	<update	id="updatePurchaseReview"	parameterType="purchase" >
+   	UPDATE transaction
+   	<set>
+   		star  		= #{star:INTEGER} ,
+		review    = #{review:VARCHAR},
+   	</set>
+   	WHERE tran_no = #{tranNo}
+ </update>
+ 	
+ 	
+ 	<select id="getPurchaseMap" parameterType="map" resultMap="purchaseSelectMap">
+  		 SELECT p.prod_name, t.lat, t.lng
+  						FROM product p, transaction t
+  						WHERE p.prod_no=t.prod_no
+	</select>
+ 
+	 
+</mapper>

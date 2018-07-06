@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ReplyMapper">
+ 	
+	<resultMap id="replySelectMap" type="reply">
+		<result property="replyNo" 		column="reply_no" 			jdbcType="INTEGER"/>
+		<result property="noticeNo" 		column="notice_no" 			jdbcType="INTEGER"/>
+		<result property="replyId"			column="reply_id" 			jdbcType="VARCHAR" />
+		<result property="replyDetail" 	column="reply_detail" 		jdbcType="VARCHAR" />
+		<result property="regDate" 			column="reg_date" 			jdbcType="DATE" />
+		<result property="updateDate" 			column="update_date" 			jdbcType="DATE" />
+	</resultMap>
+	
+	<resultMap id="noticeSelectMap" type="notice">
+		<result property="noticeNo" 		column="notice_no" 			jdbcType="INTEGER"/>
+		<result property="noticeId"			column="notice_id" 			jdbcType="VARCHAR" />
+		<result property="noticeTitle" 		column="notice_title" 			jdbcType="VARCHAR" />
+		<result property="noticeDetail" 	column="notice_detail" 		jdbcType="VARCHAR" />
+		<result property="regDate" 			column="reg_date" 			jdbcType="DATE" />
+		<result property="noticeHits" 		column="notice_hits"			jdbcType="INTEGER" />
+	</resultMap>
+	
+	<!-- SQL : INSERT -->
+	<insert 	id="addReply" parameterType="reply" >
+	 	INSERT
+		INTO reply (
+		reply_no,
+		notice_no,
+		reply_id,
+		reply_detail,
+		reg_date)
+		VALUES	
+		(seq_reply_reply_no.nextval, 
+		#{noticeNo},
+		#{replyId}, 
+		#{replyDetail}, 
+ 		SYSDATE )
+	 </insert>
+	 
+	  <!-- SQL : UPDATE -->
+	<update	id="updateReply"	parameterType="reply" >
+	   	UPDATE reply
+	   	<set>
+	   		reply_detail = #{replyDetail},
+	   		update_date = SYSDATE
+	   	</set>
+	  	 	WHERE reply_no = #{replyNo}
+	 </update>
+	 
+	 <!-- SQL : DELETE -->
+	 <delete id="deleteReply">
+	 	DELETE FROM reply
+	 	WHERE reply_no = #{replyNo}
+	 </delete>
+		 
+	<!-- SQL : SELECT LIST -->
+	<select  id="getReplyList"  parameterType="int" resultMap="replySelectMap">
+	  SELECT
+										          reply_no
+										          , notice_no
+										          , reply_detail
+										          , reply_id
+										          , reg_date
+										          , update_date
+										        FROM reply
+										        WHERE notice_no = #{noticeNo}
+										        ORDER BY reply_no DESC
+	</select>
+	
+	<!-- SQL : SELECT ROW Count -->	 
+	<select  id="getTotalCount"  parameterType="int" resultType="int">
+	  	SELECT COUNT(*)
+	  	FROM(	SELECT
+										          reply_no
+										          , notice_no
+										          , reply_detail
+										          , reply_id
+										          , reg_date
+										          , update_date
+										        FROM reply
+										        WHERE notice_no = #{noticeNo}
+										        ORDER BY reply_no ) countTable						
+	 </select>
+	 
+</mapper>

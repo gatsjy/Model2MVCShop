@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ProductMapper">
+ 	
+	<resultMap id="productSelectMap" type="product">
+		<result property="prodNo" 			column="prod_no" 					jdbcType="INTEGER"/>
+		<result property="prodName"		column="prod_name" 			jdbcType="VARCHAR" />
+		<result property="prodDetail" 		column="prod_detail" 			jdbcType="VARCHAR" />
+		<result property="price" 				column="price" 						jdbcType="INTEGER" />
+		<result property="fileName" 		column="image_file" 				jdbcType="VARCHAR" />
+		<result property="manuDate" 		column="manufacture_day" 	jdbcType="VARCHAR" />
+		<result property="prodQuantity" 	column="prod_quantity" 		jdbcType="INTEGER"  />
+		<result property="regDate" 			column="reg_date" 				jdbcType="DATE" />
+		<result property="star" 					column="star" 							jdbcType="INTEGER"  />
+		<result property="review" 			    column="review"  					jdbcType="VARCHAR" />
+		<result property="proTranCode" column="proTranCode"			jdbcType="VARCHAR" />
+		<result property="buyerId" 			column="buyerId"					jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!-- SQL : INSERT -->
+	<insert 	id="addProduct"	parameterType="product" >
+	 	INSERT
+		INTO product( prod_no , prod_name , prod_detail , price , image_file, manufacture_day, prod_quantity, reg_date) 
+		VALUES	 (	seq_product_prod_no.nextval , #{prodName} , #{prodDetail:VARCHAR} , ${price} , #{fileName:VARCHAR} , 
+								#{manuDate:VARCHAR} , #{prodQuantity:INTEGER} , SYSDATE )
+	 </insert>
+	 
+	 <!-- SQL : SELECT ONE -->
+	 <select 	id="getProduct"	parameterType="Int"	resultMap="productSelectMap">
+		select * from(SELECT 
+		p.prod_no,  
+		p.prod_name , 
+		p.prod_detail,  
+		p.manufacture_day,  
+		p.price,  
+		p.image_file, 
+		p.reg_date,  
+		NVL(t.tran_status_code,'0') as proTranCode, 
+		p.prod_quantity, 
+		round(avg(t.star),2) as star  
+		FROM product p 
+		INNER JOIN transaction t 
+		ON p.prod_no = t.prod_no(+) 
+		WHERE p.prod_no = #{value}
+		GROUP BY p.prod_no, p.prod_name , p.prod_detail, p.manufacture_day, p.price, p.image_file,p.reg_date, NVL(t.tran_status_code,'0'),p.prod_quantity)
+
+where rownum = 1
+	 </select>
+	 
+	  <!-- SQL : SELECT ONE -->
+	 <select 	id="getStarFavorite" resultType="String">
+		select * from(select pr.image_file
+
+			FROM product pr
+
+			INNER JOIN transaction t
+
+			ON pr.prod_no=t.prod_no
+
+			GROUP BY pr.image_file 
+
+			HAVING round(avg(t.star),5) = 
+
+			(SELECT max(avg(t.star))
+
+			FROM product pr
+
+			INNER JOIN transaction t
+
+			ON pr.prod_no=t.prod_no(+)
+
+			GROUP BY pr.image_file ))
+
+where rownum = 1
+	 </select>
+ 
+	 <!-- SQL : UPDATE -->
+	 <update	id="updateProduct"	parameterType="product" >
+	   	UPDATE product
+	   	<set>
+	   		prod_name 	= #{prodName} ,
+			prod_detail	= #{prodDetail},
+			manufacture_day = #{manuDate} ,
+			price				=	#{price},
+			image_file     = #{fileName},
+			prod_quantity = #{prodQuantity:NUMERIC}
+	   	</set>
+	   	WHERE prod_no = #{prodNo}
+	 </update>
+	 
+	 <!-- SQL : UPDATEQUANTITY -->
+	 <update	id="updateProductQuantity"	parameterType="product" >
+	   	UPDATE product
+	   	<set>
+			prod_quantity = #{prodQuantity:NUMERIC}
+	   	</set>
+	   	WHERE prod_no = #{prodNo}
+	 </update>
+		 
+	<!-- SQL : SELECT LIST -->
+	<select  id="getProductList"  parameterType="search"	resultMap="productSelectMap">
+	  	SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+	  					FROM		(	SELECT pr.prod_name , pr.prod_no , pr.price , pr.reg_date , pr.prod_quantity, pr.image_file, round(avg(t.star),2) as star
+											FROM product pr
+											INNER JOIN transaction t
+											ON pr.prod_no=t.prod_no(+)
+											<if test="searchCondition != null">
+												<where>
+													<if test="searchCondition == 0 and searchKeyword !='' ">
+										 				pr.prod_no LIKE '%'||#{searchKeyword}||'%'
+													</if>
+													<if test="searchCondition == 1 and searchKeyword !='' ">
+										 				pr.prod_name LIKE '%'||#{searchKeyword}||'%'
+													</if>
+													<if test="searchCondition == 2 and searchKeyword !='' ">
+										 				pr.price LIKE '%'||#{searchKeyword}||'%'
+													</if>
+												</where>
+											</if>
+											GROUP BY pr.prod_name , pr.prod_no , pr.price , pr.reg_date , pr.prod_quantity, pr.image_file										
+											<!-- HAVING NVL(t.tran_status_code,'0') IN (0,1,2,3) -->
+											ORDER BY 
+											<if test="searchSorting == 1 ">
+												round(avg(t.star),2) desc nulls last
+											</if>	
+											<if test="searchSorting == 0 ">
+												prod_no
+											</if>
+											) inner_table
+											WHERE ROWNUM <![CDATA[<=]]> #{currentPage}*#{pageSize} )
+  								WHERE row_seq BETWEEN (#{currentPage}-1)*#{pageSize}+1
+  					AND #{currentPage}*#{pageSize}
+	</select>
+	 	<!--  위 두번째 subQuery 의  
+	 			WHERE ROWNUM &lt;= #{endRowNum} ) 는
+	 			WHERE ROWNUM <= #{endRowNum} ) 의미이며..
+	 			< 는 keyword 로 &lt; 를	사용.
+	 			
+	 			<![CDATA[  ~~~  ]]> 를 이용하여 아래와 같이 사용  할 수 있다.
+	 			CDATA ==> Character Data 의 의미 Java 에서 \n 같은 특수문자 처리  
+
+				WHERE ROWNUM <![CDATA[ <=]]> #{endRowNum} )
+		-->
+		
+		<!-- ajax를 쓰기위한 mapper -->
+		<select  id="getProductListAjax"  parameterType="search"	resultMap="productSelectMap">
+								SELECT prod_name , prod_no , price
+											FROM product				
+	</select>
+	<!-- 끝!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+		
+	<!-- SQL : SELECT ROW Count -->	 
+	<select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	  	SELECT COUNT(*)
+	  	FROM(	SELECT pr.prod_name , pr.prod_no , pr.price , pr.reg_date , pr.prod_quantity, round(avg(t.star),2) as star
+											FROM product pr
+											INNER JOIN transaction t
+											ON pr.prod_no=t.prod_no(+)
+											<if test="searchCondition != null">
+												<where>
+													<if test="searchCondition == 0 and searchKeyword !='' ">
+										 				pr.prod_no LIKE '%'||#{searchKeyword}||'%'
+													</if>
+													<if test="searchCondition == 1 and searchKeyword !='' ">
+										 				pr.prod_name LIKE '%'||#{searchKeyword}||'%'
+													</if>
+													<if test="searchCondition == 2 and searchKeyword !='' ">
+										 				pr.price LIKE '%'||#{searchKeyword}||'%'
+													</if>
+												</where>
+											</if>
+											GROUP BY pr.prod_name , pr.prod_no , pr.price , pr.reg_date , pr.prod_quantity											
+											<!-- HAVING NVL(t.tran_status_code,'0') IN (0,1,2,3) -->
+											ORDER BY 
+											<if test="searchSorting == 1 ">
+												round(avg(t.star),2) desc nulls last
+											</if>	
+											<if test="searchSorting == 0 ">
+												prod_no
+											</if>
+											) countTable						
+	 </select>
+	 
+ <select  id="getReviewList"  parameterType="Int"	resultMap="productSelectMap">
+	  	SELECT  t.review as review, t.buyer_Id as buyerId
+		FROM product p, transaction t
+		WHERE p.prod_no=t.prod_no(+)
+		AND p.prod_no= ${value}
+		AND t.review is not null
+</select>
+	 
+</mapper>

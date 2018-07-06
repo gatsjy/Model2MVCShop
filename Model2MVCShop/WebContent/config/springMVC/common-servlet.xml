@@ -79,13 +79,15 @@
 	    실제 PJT 진행시 일반적으로 resources 폴더를 만들고 폴더내부에
 	     css , image, js 등 넣어 관리하며 아래와 같이 1번의 설정으로 관리
 	     <mvc:resources mapping="/resources/**" location="/resources/" />
-	--> 
+	-->
+	<mvc:resources mapping="/calendar/**" location="/calendar/" /> 
 	<mvc:resources mapping="/css/**" location="/css/" />
    	<mvc:resources mapping="/images/**" location="/images/" />
    	<mvc:resources mapping="/javascript/**" location="/javascript/" />
 	<!-- //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
    	
    	<!--  부트스트랩을 이용하기 위한 매핑 -->
+   	<mvc:resources mapping="/calendar/**" location="/WEB-INF/resources/calendar/"/>
    	<mvc:resources mapping="/bower_components/**" location="/WEB-INF/resources/bower_components/"/>
 	<mvc:resources mapping="/plugins/**" location="/WEB-INF/resources/plugins/"/>
 	<mvc:resources mapping="/dist/**" location="/WEB-INF/resources/dist/"/>

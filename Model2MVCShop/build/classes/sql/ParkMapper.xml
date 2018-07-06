@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ParkMapper">
+ 	
+	<resultMap id="parkSelectMap" type="park">
+		<result property="parkNo" 			 column="parkNo" 				jdbcType="NUMERIC"/>
+		<result property="parkName"	     column="parkName" 		jdbcType="VARCHAR" />
+		<result property="parkDetail" 	      column="parkDetail " 			jdbcType="VARCHAR" />
+		<result property="parkImg" 				column="parkImg " 						                  jdbcType="VARCHAR" />
+		<result property="parkProvince" 				 column="parkProvince" 						jdbcType="VARCHAR" />
+		<result property="parkAddress" 			 column="partAddress" 		jdbcType="VARCHAR" />
+		<result property="parkPhone" 			 column="parkPhone" 					jdbcType="VARCHAR" />
+		<result property="parkX" 			 column="parkX" 					jdbcType="VARCHAR"  />
+		<result property="parkY" 		 column="parkY " 			jdbcType="VARCHAR" />
+	</resultMap>
+		 
+	<!-- SQL : SELECT LIST -->
+	<select  id="getParkList"  parameterType="search" resultMap="parkSelectMap">
+	  	SELECT * FROM park		
+	 </select>
+	 	
+	<!--  ajax를 위해서 만든 맵퍼!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+	<!-- SQL : SELECT LIST -->
+	<!-- <select  id="getUserListAjax"  parameterType="search"	resultMap="userSelectMap">
+	  								SELECT user_id , user_name , email
+											FROM users
+											<if test="searchCondition != null">
+												<where>
+													<if test="searchCondition == 0 and searchKeyword !='' ">
+										 				user_id LIKE '%'||#{searchKeyword}||'%'
+													</if>
+													<if test="searchCondition == 1 and searchKeyword !='' ">
+										 				user_name LIKE '%'||#{searchKeyword}||'%'
+													</if>
+												</where>
+											</if>
+											ORDER BY user_id 
+	 </select> -->
+	<!--  ajax를 위해서 만든 맵퍼!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+	
+</mapper>
